@@ -205,6 +205,48 @@
             margin-bottom: 20px;
         }
 
+        .options {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .option-group label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .champion-assignment {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        .team.blue-side {
+            border-left-color: #007bff;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+        }
+
+        .team.red-side {
+            border-left-color: #dc3545;
+            background: linear-gradient(135deg, #ffebee 0%, #f8f9fa 100%);
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 20px;
@@ -236,6 +278,13 @@
             </div>
         </div>
 
+        <div class="options">
+            <div class="option-group">
+                <input type="checkbox" id="assignChampions" checked>
+                <label for="assignChampions">Assign random champions to players</label>
+            </div>
+        </div>
+
         <div id="messageContainer"></div>
 
         <div class="players-list" id="playersSection" style="display: none;">
@@ -257,6 +306,27 @@
 
     <script>
         let players = [];
+
+        // League of Legends Champions Database
+        const champions = [
+            "Aatrox", "Ahri", "Akali", "Akshan", "Alistar", "Ammu", "Anivia", "Annie", "Aphelios", "Ashe",
+            "Aurelion Sol", "Azir", "Bard", "Bel'Veth", "Blitzcrank", "Brand", "Braum", "Caitlyn", "Camille", "Cassiopeia",
+            "Cho'Gath", "Corki", "Darius", "Diana", "Dr. Mundo", "Draven", "Ekko", "Elise", "Evelynn", "Ezreal",
+            "Fiddlesticks", "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", "Gragas", "Graves", "Gwen",
+            "Hecarim", "Heimerdinger", "Illaoi", "Irelia", "Ivern", "Janna", "Jarvan IV", "Jax", "Jayce", "Jhin",
+            "Jinx", "K'Sante", "Kai'Sa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina", "Kayle", "Kayn",
+            "Kennen", "Kha'Zix", "Kindred", "Kled", "Kog'Maw", "LeBlanc", "Lee Sin", "Leona", "Lillia", "Lissandra",
+            "Lucian", "Lulu", "Lux", "Malphite", "Malzahar", "Maokai", "Master Yi", "Miss Fortune", "Mordekaiser", "Morgana",
+            "Nami", "Nasus", "Nautilus", "Neeko", "Nidalee", "Nilah", "Nocturne", "Nunu & Willump", "Olaf", "Orianna",
+            "Ornn", "Pantheon", "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus", "Rek'Sai", "Rell",
+            "Renata Glasc", "Renekton", "Rengar", "Riven", "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine",
+            "Sett", "Shaco", "Shen", "Shyvana", "Singed", "Sion", "Sivir", "Skarner", "Sona", "Soraka",
+            "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon", "Taric", "Teemo", "Thresh", "Tristana",
+            "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot", "Varus", "Vayne", "Veigar", "Vel'Koz",
+            "Vex", "Vi", "Viego", "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah", "Xerath",
+            "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri", "Ziggs", "Zilean",
+            "Zoe", "Zyra"
+        ];
 
         function addPlayer() {
             const input = document.getElementById('playerName');
@@ -315,46 +385,103 @@
                 return;
             }
             
+            const assignChampions = document.getElementById('assignChampions').checked;
+            
             // Shuffle the players array
             const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
             
-            // Calculate team size (3 for 3v3)
+            // For LoL customs, we want Blue side vs Red side teams
             const teamSize = 3;
             const numberOfTeams = Math.floor(shuffledPlayers.length / teamSize);
             const leftoverPlayers = shuffledPlayers.length % teamSize;
             
             const teams = [];
+            const teamData = [];
+            
+            // Create teams with side assignments (Blue/Red alternating)
             for (let i = 0; i < numberOfTeams; i++) {
-                teams.push(shuffledPlayers.slice(i * teamSize, (i + 1) * teamSize));
+                const teamPlayers = shuffledPlayers.slice(i * teamSize, (i + 1) * teamSize);
+                const side = i % 2 === 0 ? 'Blue' : 'Red';
+                
+                let teamInfo = {
+                    players: teamPlayers,
+                    side: side,
+                    champions: []
+                };
+                
+                if (assignChampions) {
+                    // Assign random champions to each player
+                    const usedChampions = new Set();
+                    teamInfo.champions = teamPlayers.map(() => {
+                        let champion;
+                        do {
+                            champion = champions[Math.floor(Math.random() * champions.length)];
+                        } while (usedChampions.has(champion) && usedChampions.size < champions.length);
+                        usedChampions.add(champion);
+                        return champion;
+                    });
+                }
+                
+                teamData.push(teamInfo);
             }
             
-            displayTeams(teams, shuffledPlayers.slice(numberOfTeams * teamSize));
+            // Handle substitutes
+            const substitutes = shuffledPlayers.slice(numberOfTeams * teamSize);
+            let substituteChampions = [];
             
-            let message = `Teams randomized! ${numberOfTeams} teams of ${teamSize} players each.`;
+            if (assignChampions && substitutes.length > 0) {
+                const usedChampions = new Set(teamData.flatMap(team => team.champions));
+                substituteChampions = substitutes.map(() => {
+                    let champion;
+                    do {
+                        champion = champions[Math.floor(Math.random() * champions.length)];
+                    } while (usedChampions.has(champion) && usedChampions.size < champions.length);
+                    usedChampions.add(champion);
+                    return champion;
+                });
+            }
+            
+            displayTeams(teamData, substitutes, substituteChampions, assignChampions);
+            
+            let message = `Teams randomized! ${numberOfTeams} teams organized by side.`;
             if (leftoverPlayers > 0) {
                 message += ` ${leftoverPlayers} player(s) will be substitutes.`;
+            }
+            if (assignChampions) {
+                message += ' Champions have been assigned!';
             }
             showMessage(message, 'success');
         }
 
-        function displayTeams(teams, substitutes = []) {
+        function displayTeams(teamData, substitutes = [], substituteChampions = [], assignChampions = false) {
             const container = document.getElementById('teamsContainer');
             
-            let html = teams.map((team, index) => `
-                <div class="team">
-                    <h3>Team ${index + 1}</h3>
-                    ${team.map(player => `
-                        <div class="team-member">${escapeHtml(player)}</div>
-                    `).join('')}
-                </div>
-            `).join('');
+            let html = teamData.map((team, index) => {
+                const sideClass = team.side.toLowerCase() === 'blue' ? 'blue-side' : 'red-side';
+                return `
+                    <div class="team ${sideClass}">
+                        <h3>${team.side} Side - Team ${index + 1}</h3>
+                        ${team.players.map((player, playerIndex) => `
+                            <div class="team-member">
+                                ${escapeHtml(player)}
+                                ${assignChampions && team.champions[playerIndex] ? 
+                                    `<div class="champion-assignment">🏆 ${escapeHtml(team.champions[playerIndex])}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
             
             if (substitutes.length > 0) {
                 html += `
                     <div class="team" style="border-left-color: #ffc107;">
                         <h3>Substitutes</h3>
-                        ${substitutes.map(player => `
-                            <div class="team-member">${escapeHtml(player)}</div>
+                        ${substitutes.map((player, index) => `
+                            <div class="team-member">
+                                ${escapeHtml(player)}
+                                ${assignChampions && substituteChampions[index] ? 
+                                    `<div class="champion-assignment">🏆 ${escapeHtml(substituteChampions[index])}</div>` : ''}
+                            </div>
                         `).join('')}
                     </div>
                 `;
