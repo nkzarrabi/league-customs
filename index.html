@@ -372,9 +372,17 @@
             playersList.innerHTML = players.map(player => `
                 <div class="player-item">
                     <span class="player-name">${escapeHtml(player)}</span>
-                    <button class="remove-btn" onclick="removePlayer('${escapeHtml(player)}')">Remove</button>
+                    <button class="remove-btn" data-player="${escapeHtml(player)}">Remove</button>
                 </div>
             `).join('');
+            
+            // Bind event listeners to "Remove" buttons
+            document.querySelectorAll('.remove-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const playerName = button.getAttribute('data-player');
+                    removePlayer(playerName);
+                });
+            });
             
             randomizeBtn.disabled = players.length < 6;
         }
